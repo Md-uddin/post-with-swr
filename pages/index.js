@@ -1,40 +1,43 @@
 import Head from "next/head";
+import { useState } from "react";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import useSWR, { useSWRConfig } from "swr";
 
 export default function Home() {
+  const [inputData, setinputData] = useState({
+    name: "",
+    description: "",
+  });
   /////for get req
   const fetcher = (...arg) => fetch(...arg).then((res) => res.json());
 
   /////for post req
   const { mutate } = useSWRConfig();
-  let postObject = {
-    headers: {
-      Accept: "application/json;charset=UTF-8",
-      "Content-Type": "application/json;charset=UTF-8",
-    },
-    method: "POST",
-    body: JSON.stringify({
-      channelId: 49326900,
-      currency: "EUR",
-      market: "SE",
-      programId: [42014357, 1035156879],
-      minAmount: 5000,
-      maxAmount: 100000,
-      acceptsRemarks: true,
-    }),
-  };
-  let Url = "https://api.adtraction.com/v2/public/compare/loans/";
+  let Url = "http://localhost:3002/users";
+  const { data, error } = useSWR(Url, fetcher);
 
-  
-  const { data, error } = useSWR(
-    "https://jsonplaceholder.typicode.com/todos/",
-    fetcher
-  );
-  console.log(data, error);
+  const createUser = () => {
+    if (inputData.name.length > 1 && inputData.description.length > 1) {
+      mutate(
+        Url,
+        fetcher(Url, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(inputData),
+        })
+      );
+    } else {
+      alert("please add name and description");
+    }
+  };
+  console.log(data);
   if (error) return "An error has occurred.";
   if (!data) return "Loading...";
+
   return (
     <div className={styles.container}>
       <Head>
@@ -44,11 +47,29 @@ export default function Home() {
       </Head>
       <main>
         <h1>Post request with swr</h1>
+        {data &&
+          data.length > 0 &&
+          data.map((data, index) => (
+            <div key={index}>
+              <h2>name: {data.name}</h2>
+              <h3>description: {data.description}</h3>
+            </div>
+          ))}
+        <input
+          type="text"
+          placeholder="name"
+          onChange={(e) => setinputData({ ...inputData, name: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="description"
+          onChange={(e) =>
+            setinputData({ ...inputData, description: e.target.value })
+          }
+        />
         <button
           onClick={() => {
-            fetcher(Url, postObject);
-            console.log("mutating");
-            mutate("https://jsonplaceholder.typicode.com/todos/");
+            createUser();
           }}
         >
           post data
